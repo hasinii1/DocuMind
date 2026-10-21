@@ -1,4 +1,6 @@
-@'
+cd F:\DocuMind
+
+$content = @'
 databases:
   - name: documind-db
     databaseName: documind
@@ -10,8 +12,8 @@ services:
   - type: web
     name: documind-backend
     runtime: docker
-    rootDir: backend
-    dockerfilePath: ./Dockerfile
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
     region: singapore
     healthCheckPath: /api/v1/health
     envVars:
@@ -41,12 +43,9 @@ services:
   - type: web
     name: documind-frontend
     runtime: docker
-    rootDir: frontend
-    dockerfilePath: ./Dockerfile
+    dockerfilePath: ./frontend/Dockerfile
+    dockerContext: ./frontend
     region: singapore
     envVars:
       - key: NEXT_PUBLIC_API_URL
         value: https://documind-backend.onrender.com/api/v1
-'@ | Set-Content -Encoding utf8 .\render.yaml
-
-Get-Content .\render.yaml
