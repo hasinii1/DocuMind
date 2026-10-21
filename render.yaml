@@ -1,0 +1,52 @@
+@'
+databases:
+  - name: documind-db
+    databaseName: documind
+    user: documind
+    postgresMajorVersion: "16"
+    region: singapore
+
+services:
+  - type: web
+    name: documind-backend
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    region: singapore
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: documind-db
+          property: connectionString
+      - key: ALLOWED_ORIGINS
+        value: https://documind-frontend.onrender.com
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: USE_PGVECTOR
+        value: "false"
+      - key: EMBEDDING_PROVIDER
+        value: local
+      - key: EMBEDDING_MODEL_NAME
+        value: all-MiniLM-L6-v2
+      - key: EMBEDDING_DIMENSION
+        value: "384"
+      - key: LOCAL_STORAGE_DIR
+        value: /app/storage/uploads
+
+  - type: web
+    name: documind-frontend
+    runtime: docker
+    rootDir: frontend
+    dockerfilePath: ./Dockerfile
+    region: singapore
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        value: https://documind-backend.onrender.com/api/v1
+'@ | Set-Content -Encoding utf8 .\render.yaml
+
+Get-Content .\render.yaml
