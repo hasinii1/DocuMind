@@ -86,14 +86,42 @@ export interface ComparisonResult {
   changes: ComparisonChange[];
 }
 
+export interface ExtractionSchemaField {
+  type: "string" | "number" | "array" | "boolean";
+  title?: string;
+  description?: string;
+}
+
+export interface ExtractionSchema {
+  title: string;
+  description: string;
+  properties: Record<string, ExtractionSchemaField>;
+  required?: string[];
+}
+
+export interface CustomExtractionField {
+  id: number;
+  name: string;
+  description: string;
+  type: ExtractionSchemaField["type"];
+  required: boolean;
+}
+
+export interface ExtractionCitation {
+  chunk_id: string;
+  page_number: number;
+  quote: string;
+}
+
 export interface ExtractionRunResult {
   id: string;
   document_id: string;
   document_title?: string;
   schema_name: string;
-  target_schema: any;
-  extracted_data: Record<string, any>;
-  field_citations?: Record<string, any>;
+  schema_title?: string;
+  target_schema: ExtractionSchema;
+  extracted_data: Record<string, unknown>;
+  field_citations?: Record<string, ExtractionCitation | ExtractionCitation[]>;
   validation?: {
     is_valid: boolean;
     missing_required: string[];

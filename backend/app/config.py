@@ -1,11 +1,14 @@
 import os
 from typing import List
+from pydantic import model_validator
 from pydantic_settings import BaseSettings
+
+DEFAULT_SECRET_KEY = "documind_secret_development_key_change_in_production"
 
 class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     LOG_LEVEL: str = "INFO"
-    SECRET_KEY: str = "documind_secret_development_key_change_in_production"
+    SECRET_KEY: str = DEFAULT_SECRET_KEY
     
     # Server
     BACKEND_HOST: str = "127.0.0.1"
@@ -42,6 +45,16 @@ class Settings(BaseSettings):
     MAX_PAGES_PER_DOCUMENT: int = 200
     DEFAULT_CHUNK_SIZE_TOKENS: int = 600
     DEFAULT_CHUNK_OVERLAP_TOKENS: int = 100
+
+    @model_validator(mode="after")
+    def validate_production_secret(self):
+        if self.ENVIRONMENT.lower() == "production" and (
+            self.SECRET_KEY == DEFAULT_SECRET_KEY
+            or self.SECRET_KEY.startswith("CHANGE_ME")
+            or len(self.SECRET_KEY) < 32
+        ):
+            raise ValueError("Production requires a unique SECRET_KEY of at least 32 characters.")
+        return self
 
     @property
     def cors_origins(self) -> List[str]:

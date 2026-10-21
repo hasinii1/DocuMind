@@ -262,7 +262,8 @@ def download_document_file(
     return FileResponse(
         path=doc.storage_path,
         media_type=doc.mime_type,
-        filename=doc.original_filename
+        filename=doc.original_filename,
+        content_disposition_type="inline"
     )
 
 @router.get("/{document_id}/pages/{page_number}")

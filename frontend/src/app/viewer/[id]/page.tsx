@@ -19,7 +19,8 @@ function ViewerContent() {
   const params = useParams();
   const searchParams = useSearchParams();
   const docId = params.id as string;
-  const initialPage = parseInt(searchParams.get("page") || "1", 10);
+  const requestedPage = Number.parseInt(searchParams.get("page") || "1", 10);
+  const initialPage = Number.isFinite(requestedPage) && requestedPage > 0 ? requestedPage : 1;
 
   const [document, setDocument] = useState<DocumentItem | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(initialPage);
@@ -33,6 +34,7 @@ function ViewerContent() {
         setLoading(true);
         const d = await fetchDocument(docId);
         setDocument(d);
+        setCurrentPage((page) => Math.min(page, Math.max(d.page_count || 1, 1)));
       } catch (err) {
         console.error(err);
       } finally {
@@ -185,7 +187,7 @@ function ViewerContent() {
                         el.element_type === "heading"
                           ? "bg-purple-100 text-purple-800"
                           : el.element_type === "table"
-                          ? "bg-blue-100 text-blue-800"
+                          ? "bg-brand-100 text-brand-800"
                           : el.element_type === "ocr_text"
                           ? "bg-amber-100 text-amber-800"
                           : "bg-slate-200 text-slate-700"

@@ -7,7 +7,7 @@
 [![pgvector](https://img.shields.io/badge/pgvector-PostgreSQL-336791.svg)](https://github.com/pgvector/pgvector)
 [![CI/CD Status](https://img.shields.io/badge/CI%2FCD-Passing-emerald.svg)](.github/workflows/ci.yml)
 
-> **DocuMind** is an enterprise-grade, full-stack AI engineering platform built for document intelligence. It moves far beyond simple PDF chat wrappers by enforcing **layout-aware parsing**, **hybrid retrieval (BM25 + Vector) with Reciprocal Rank Fusion**, **cross-encoder reranking**, **page-level citation verification**, **strict model abstention**, **semantic version comparison**, and **schema-based structured extraction**.
+> **DocuMind** is a full-stack document intelligence application with **layout-aware parsing**, **hybrid retrieval**, **page-level citations**, **evidence-aware Q&A**, **document version comparison**, and **schema-based structured extraction**.
 
 ---
 
@@ -26,14 +26,17 @@
 - **Strict Model Abstention:** Instructs the LLM to abstain when evidence is missing rather than inventing facts.
 - **Database-Enforced Citations:** The backend verifies all cited chunk IDs against the database and confirms verbatim quotes, rejecting model-invented metadata.
 
-### 3. Semantic Document Version Diffing
-- Upload two versions of a policy, contract, or report (e.g. V1 vs V2).
-- Automatically detects additions, removals, altered clauses, and numerical value changes.
-- Highlights **Critical Value Shifts** (e.g., budget revisions, SLA modifications, date changes) with automated classification rationales.
+### 3. Document Version Comparison
+- Choose two processed documents from the library or upload both PDFs directly on the Compare page.
+- Wait for each upload to finish processing, then select the original and revised versions and run the comparison.
+- Compares ordered text chunks to flag additions, removals, and modifications. A rule-based check highlights changed numbers and selected obligation terms.
+- Treat the results as a review aid, not a legal or semantic determination. Verify each change against the linked source pages.
 
 ### 4. Schema-Based Structured Extraction
 - Built-in schemas for **Project Proposals**, **Commercial Contracts**, and **Financial Statements**, plus custom JSON Schemas.
-- Extracts entities into an editable review table and exports verified results to **CSV** or **JSON**.
+- A universal document profile works across general PDFs and extracts an overview, section topics, heading-based terms, key passages, dates, and contextualized figures.
+- Add custom fields with a name, description, and value type; extracted results include links to source pages and can be edited and exported to **CSV** or **JSON**.
+- Extraction uses source text and section headings; review the linked page because automatic field matching can miss differently worded information.
 - Distinguishes absent fields from zero values, preventing silent hallucination.
 
 ---
@@ -77,15 +80,15 @@ flowchart TD
 
 ## 📊 Measured Quality Benchmark Results
 
-The benchmark was executed against standardized test cases covering factual queries, multi-page synthesis, table extraction, version conflicts, and indirect injection attempts:
+The checked-in benchmark report covers eight sample cases. These measurements describe that small test set and are not production quality guarantees:
 
 | Metric | Measured Score | Evaluation Target | Status |
 | :--- | :---: | :---: | :---: |
 | **Recall@5** | **100.0%** | > 85.0% | ✅ Passed |
-| **Mean Reciprocal Rank (MRR)** | **1.000** | > 0.800 | ✅ Passed |
+| **Mean Reciprocal Rank (MRR)** | **0.800** | ≥ 0.800 | ✅ Passed |
 | **Citation Validity Rate** | **100.0%** | > 95.0% | ✅ Passed |
-| **Abstention Precision** | **100.0%** | > 90.0% | ✅ Passed |
-| **Mean Retrieval Latency** | **0.005s** | < 0.200s | ✅ Passed |
+| **Abstention Accuracy** | **100.0%** | > 90.0% | ✅ Passed |
+| **Mean Retrieval Latency** | **0.006s** | < 0.200s | ✅ Passed |
 
 *Run the repeatable evaluation harness anytime with `python evaluation/run_evaluation.py`.*
 
@@ -95,23 +98,26 @@ The benchmark was executed against standardized test cases covering factual quer
 
 ### Prerequisites
 - Python 3.11+
-- Node.js 18+ (LTS)
+- Node.js 20 (LTS)
 - Git
 
 ### 1. Clone & Set Up Backend
 ```powershell
-git clone https://github.com/your-username/documind-ai.git
-cd documind-ai
+git clone <your-github-repository-url>
+Set-Location <repository-folder>
 
-# Activate virtual environment
+# Create and activate a virtual environment
+py -3.11 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 
 # Install dependencies
-pip install -r backend/requirements.txt
+python -m pip install -r backend/requirements.txt
 
 # Copy environment variables
-cp .env.example .env
+Copy-Item .env.example .env
 ```
+
+For the native Windows quickstart below, edit `.env` and set `DATABASE_URL=sqlite:///./documind.db` (the example file defaults to the Docker PostgreSQL service hostname `db`). Use the PostgreSQL URL from the example unchanged when running the full Docker Compose deployment.
 
 ### 2. Run Backend Tests & Benchmark
 ```powershell
@@ -141,15 +147,40 @@ npm run dev
 
 ## 🐳 Docker Deployment
 
-To launch the full system with PostgreSQL + pgvector in Docker:
+Docker Compose runs the frontend, API, and PostgreSQL. The services bind to localhost only; use a VPN/private network or an authenticated reverse proxy before allowing other users to reach the app.
 
+### Local/private deployment
 ```powershell
-docker-compose up --build -d
+Copy-Item .env.example .env
 ```
 
-- **Frontend:** `http://localhost:3000`
-- **Backend API:** `http://localhost:8000/docs`
-- **PostgreSQL / pgvector:** `localhost:5432`
+Edit `.env` before starting:
+
+- Replace `SECRET_KEY` with a unique random value of at least 32 characters. For example: `python -c "import secrets; print(secrets.token_urlsafe(48))"`.
+- Replace `POSTGRES_PASSWORD` and use the same password in `DATABASE_URL`. URL-encode special characters in the URL password.
+- Leave `NEXT_PUBLIC_API_URL` and `ALLOWED_ORIGINS` at their localhost defaults for use from the same machine.
+
+Start and inspect the services:
+
+```powershell
+docker compose up --build -d
+docker compose ps
+docker compose logs -f backend frontend
+```
+
+Open `http://localhost:3000`. The API health endpoint is `http://localhost:8000/api/v1/health`; interactive API docs are at `http://localhost:8000/docs`. The database is not published to the host. Uploaded files and PostgreSQL data persist in named Docker volumes.
+
+For an existing deployment, back up the database and uploaded-file volume before upgrading; this Compose setup initializes a fresh database from the SQLAlchemy models and does not automatically migrate an older schema. `docker compose down` keeps named volumes; do not add `-v` unless you intentionally want to erase persisted data.
+
+### Host with a domain and HTTPS reverse proxy
+
+1. Install Docker Engine with the Compose plugin on the server. Configure TLS and a reverse proxy (for example, Caddy or Nginx) that routes the public site to `127.0.0.1:3000` and `/api/` to `127.0.0.1:8000`, preserving the `/api/` path.
+2. Copy `.env.example` to `.env`; set strong unique `SECRET_KEY` and PostgreSQL credentials.
+3. Set `NEXT_PUBLIC_API_URL` to the browser-reachable HTTPS API URL (for a same-domain proxy, `https://docs.example.com/api/v1`) and `ALLOWED_ORIGINS` to the exact frontend origin (for example, `https://docs.example.com`).
+4. Run `docker compose up --build -d` and verify `docker compose ps`, the health endpoint, and the site through HTTPS.
+5. Rebuild the frontend after changing `NEXT_PUBLIC_API_URL`; Next.js embeds this value during image build. Back up the `postgres_data` and `storage_uploads` volumes regularly.
+
+Do not expose this build directly to the public internet yet. The app currently has no user sign-in flow and uses a shared default workspace; protect the entire site and API behind a trusted VPN or an authenticated access gateway, and use it only for a private, trusted audience. Public multi-user deployment requires application-level authentication, authorization, and workspace isolation first. Gemini features are optional; set `GEMINI_API_KEY` only if you want to use that provider.
 
 ---
 

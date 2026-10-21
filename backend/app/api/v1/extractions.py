@@ -32,9 +32,15 @@ def start_structured_extraction(
 ):
     doc = verify_document_access(db, user, req.document_id)
 
-    result = structured_extractor.extract(
-        db, doc.id, req.workspace_id, req.schema_name, req.custom_schema
-    )
+    try:
+        result = structured_extractor.extract(
+            db, doc.id, req.workspace_id, req.schema_name, req.custom_schema
+        )
+    except ValueError as error:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(error),
+        ) from error
 
     run = ExtractionRun(
         workspace_id=req.workspace_id,
@@ -54,6 +60,8 @@ def start_structured_extraction(
         "document_id": doc.id,
         "document_title": doc.title,
         "schema_name": run.schema_name,
+        "schema_title": result["target_schema"].get("title", run.schema_name),
+        "target_schema": run.target_schema,
         "extracted_data": run.extracted_data,
         "field_citations": run.field_citations,
         "validation": result["validation"],

@@ -27,6 +27,7 @@ def test_list_schemas_endpoint():
     data = response.json()
     assert "project_proposal" in data
     assert "contract_agreement" in data
+    assert "universal_document" in data
 
 def test_create_and_list_conversations():
     res = client.post("/api/v1/conversations", json={"title": "Q3 Analysis Chat"})

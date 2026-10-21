@@ -3,8 +3,8 @@ import Navbar from "@/components/Navbar";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "DocuMind - Multimodal Document Intelligence Platform",
-  description: "Enterprise Document Intelligence with Verified Source Citations, Version Diffing, and Structured Field Extraction.",
+  title: "DocuMind | Understand your documents",
+  description: "Find evidence-backed answers, compare document versions, and extract useful information from your files.",
 };
 
 export default function RootLayout({
@@ -14,11 +14,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="min-h-screen flex flex-col bg-slate-50 text-slate-900 antialiased">
-        <Navbar />
-        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          {children}
-        </main>
+      <body className="min-h-screen bg-background text-slate-900 antialiased">
+        <div className="flex min-h-screen flex-col lg:flex-row">
+          <Navbar />
+          <main className="app-main mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 lg:px-8">
+            {children}
+          </main>
+        </div>
       </body>
     </html>
   );
