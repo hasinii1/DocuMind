@@ -94,7 +94,8 @@ def configure_offline_benchmark_embeddings():
 
 
 def run_benchmark():
-    configure_offline_benchmark_embeddings()
+    if os.getenv("DOCUMIND_OFFLINE_EVALUATION", "").lower() == "true":
+        configure_offline_benchmark_embeddings()
     init_db()
     db = SessionLocal()
     seed_benchmark_documents(db)
