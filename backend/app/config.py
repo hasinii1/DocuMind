@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     GEMINI_MODEL: str = "gemini-2.5-flash"
     
     # Embeddings
-    EMBEDDING_PROVIDER: str = "local" # 'sentence-transformers', 'gemini', or 'local'
+    EMBEDDING_PROVIDER: str = "gemini" # 'sentence-transformers', 'gemini', or 'local'
     EMBEDDING_MODEL_NAME: str = "all-MiniLM-L6-v2"
     EMBEDDING_DIMENSION: int = 384
     
@@ -66,6 +66,7 @@ class Settings(BaseSettings):
         extra = "ignore"
 
 settings = Settings()
+
 
 
 
