@@ -114,6 +114,11 @@ class LayoutAwareChunker:
             if not content:
                 continue
 
+            # Never create searchable chunks from image-to-PDF placeholders.
+            normalized = " ".join(content.lower().split()).strip(" .:-")
+            if normalized in {"image to pdf", "image to pdf converter"}:
+                continue
+
             # If element is a Heading, update section context and flush prior text
             if el_type == "heading":
                 flush_prose_buffer()

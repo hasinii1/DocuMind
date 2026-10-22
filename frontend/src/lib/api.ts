@@ -67,6 +67,22 @@ export async function fetchConversationMessages(conversationId: string) {
   return res.json();
 }
 
+export async function clearConversationMessages(conversationId: string) {
+  const res = await fetch(`${API_BASE}/conversations/${conversationId}/messages`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error("Failed to clear conversation");
+  return res.json();
+}
+
+export async function deleteConversation(conversationId: string) {
+  const res = await fetch(`${API_BASE}/conversations/${conversationId}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error("Failed to delete conversation");
+  return res.json();
+}
+
 export async function askQuestion(conversationId: string, question: string, documentIds?: string[]) {
   const res = await fetch(`${API_BASE}/conversations/${conversationId}/messages`, {
     method: "POST",

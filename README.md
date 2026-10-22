@@ -191,49 +191,17 @@ Do not expose this build directly to the public internet yet. The app currently 
 3. **Database-Validated Citations:** Model-invented citations are cross-checked against database primary keys; citations missing supporting quotations are marked unverified.
 4. **Zero Arbitrary Code Execution:** The LLM does not execute direct shell commands or unrestricted SQL.
 
----
-
-## 📁 Repository Structure
-
-```text
-documind-ai/
-├── backend/
-│   ├── app/
-│   │   ├── api/v1/         # Endpoints: /documents, /conversations, /comparisons, /extractions
-│   │   ├── auth/           # Workspace security, prompt injection detection, token handling
-│   │   ├── chunking/       # Layout-aware segmentation (headings, tables, prose)
-│   │   ├── citations/      # Grounding verification and quote validation
-│   │   ├── comparison/     # Version diff engine and significance classifier
-│   │   ├── db/             # SQLAlchemy models, sessions, storage abstraction
-│   │   ├── embeddings/     # Embedder supporting Gemini, Sentence-Transformers, fallback
-│   │   ├── extraction/     # Structured JSON Schema extractor with CSV export
-│   │   ├── generation/     # Grounded prompt engineering and LLM client
-│   │   ├── ingestion/      # PyMuPDF parser, OCR, table extractor, vision extractor
-│   │   ├── observability/  # Audit logging and timing middleware
-│   │   ├── retrieval/      # BM25, Vector Search, Reciprocal Rank Fusion, Reranker
-│   │   ├── config.py       # Pydantic settings
-│   │   └── main.py         # FastAPI application entrypoint
-│   ├── tests/              # Pytest suite (unit, integration, security)
-│   └── requirements.txt    # Python dependencies
-├── frontend/
-│   ├── src/
-│   │   ├── app/            # Next.js App Router pages (Dashboard, Library, Chat, Diff, Extract)
-│   │   ├── components/     # Navbar, CitationBadge, EvidenceDrawer, DiffViewer
-│   │   ├── lib/            # API client (Fetch / TanStack Query)
-│   │   └── types/          # TypeScript interface definitions
-│   ├── package.json
-│   └── tailwind.config.ts
-├── evaluation/
-│   ├── datasets/           # Benchmark question-answer dataset
-│   └── run_evaluation.py   # Repeatable evaluation runner
-├── migrations/             # SQL schema migrations (PostgreSQL + pgvector)
-├── scripts/                # Synthetic PDF generator & e2e verification scripts
-├── docker-compose.yml      # Multi-container deployment config
-├── .env.example            # Environment template
-└── README.md
-```
 
 ---
 
 ## 📄 License
 Released under the [MIT License](LICENSE).
+
+## Chat History Controls
+
+The Ask DocuMind page supports:
+- **New Chat:** Start a separate conversation.
+- **Clear Chat:** Remove messages from the current conversation.
+- **Delete Conversation:** Delete a conversation and its messages.
+
+These actions are separate from deleting uploaded documents.

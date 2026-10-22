@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import {
   createConversation,
+  clearConversationMessages,
+  deleteConversation,
   fetchConversations,
   fetchConversationMessages,
   askQuestion,
@@ -120,6 +122,56 @@ function ChatContent() {
     }
   }
 
+  async function handleNewChat() {
+    if (loading) return;
+    try {
+      const conv = await createConversation("New Conversation");
+      setConversationId(conv.id);
+      setMessages([]);
+      setActiveEvidence([]);
+      setIsEvidenceOpen(false);
+      setInputQuery("");
+    } catch (err: any) {
+      alert(err.message || "Could not create a new conversation.");
+    }
+  }
+
+  async function handleClearChat() {
+    if (!conversationId || loading) return;
+    if (!window.confirm("Clear all messages in this conversation? This cannot be undone.")) return;
+    try {
+      await clearConversationMessages(conversationId);
+      setMessages([]);
+      setActiveEvidence([]);
+      setIsEvidenceOpen(false);
+    } catch (err: any) {
+      alert(err.message || "Could not clear this conversation.");
+    }
+  }
+
+  async function handleDeleteConversation() {
+    if (!conversationId || loading) return;
+    if (!window.confirm("Permanently delete this conversation and its messages? Uploaded PDFs will not be deleted.")) return;
+    try {
+      await deleteConversation(conversationId);
+      const remaining = await fetchConversations();
+      if (remaining.length > 0) {
+        const next = remaining[0];
+        setConversationId(next.id);
+        setMessages(await fetchConversationMessages(next.id));
+      } else {
+        const fresh = await createConversation("New Conversation");
+        setConversationId(fresh.id);
+        setMessages([]);
+      }
+      setActiveEvidence([]);
+      setIsEvidenceOpen(false);
+      setInputQuery("");
+    } catch (err: any) {
+      alert(err.message || "Could not delete this conversation.");
+    }
+  }
+
   function toggleDocSelection(id: string) {
     setSelectedDocIds((prev) =>
       prev.includes(id) ? prev.filter((d) => d !== id) : [...prev, id]
@@ -210,6 +262,34 @@ function ChatContent() {
                 Grounded Hybrid Retrieval with Source-Page Citations & Strict Abstention
               </p>
             </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={handleNewChat}
+              disabled={loading}
+              className="text-xs font-semibold px-3 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-50"
+            >
+              New Chat
+            </button>
+            <button
+              type="button"
+              onClick={handleClearChat}
+              disabled={loading || messages.length === 0}
+              title="Clear chat"
+              className="text-xs font-semibold px-3 py-2 rounded-lg border border-amber-200 text-amber-700 bg-white hover:bg-amber-50 disabled:opacity-50"
+            >
+              Clear Chat
+            </button>
+            <button
+              type="button"
+              onClick={handleDeleteConversation}
+              disabled={loading || !conversationId}
+              className="text-xs font-semibold px-3 py-2 rounded-lg border border-red-200 text-red-700 bg-white hover:bg-red-50 disabled:opacity-50"
+            >
+              Delete Conversation
+            </button>
           </div>
 
           {activeEvidence.length > 0 && (

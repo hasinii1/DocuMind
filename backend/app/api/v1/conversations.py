@@ -224,3 +224,39 @@ def get_conversation_history(
         })
 
     return output
+
+
+@router.delete("/{conversation_id}/messages")
+def clear_conversation_messages(
+    conversation_id: str,
+    user: CurrentUser = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    conv = db.query(Conversation).filter(
+        Conversation.id == conversation_id
+    ).first()
+    if not conv:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    verify_workspace_access(db, user, conv.workspace_id)
+    db.query(Message).filter(
+        Message.conversation_id == conv.id
+    ).delete(synchronize_session=False)
+    db.commit()
+    return {"success": True, "message": "Conversation messages cleared"}
+
+
+@router.delete("/{conversation_id}")
+def delete_conversation(
+    conversation_id: str,
+    user: CurrentUser = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    conv = db.query(Conversation).filter(
+        Conversation.id == conversation_id
+    ).first()
+    if not conv:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    verify_workspace_access(db, user, conv.workspace_id)
+    db.delete(conv)
+    db.commit()
+    return {"success": True, "message": "Conversation deleted"}

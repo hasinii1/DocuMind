@@ -1,4 +1,4 @@
-import os
+﻿import os
 from typing import List
 from pydantic import model_validator
 from pydantic_settings import BaseSettings
@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     ALLOWED_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000"
     
     # Database
-    DATABASE_URL: str = "sqlite:///./documind.db"
+    DATABASE_URL: str = "sqlite:///F:/DocuMind/documind.db"
     USE_PGVECTOR: bool = False
     
     # Supabase (optional)
@@ -61,8 +61,10 @@ class Settings(BaseSettings):
         return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(",") if origin.strip()]
 
     class Config:
-        env_file = ".env"
+        env_file = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".env"))
         env_file_encoding = "utf-8"
         extra = "ignore"
 
 settings = Settings()
+
+

@@ -29,6 +29,11 @@ class PDFExtractor:
                     text = b[4].strip()
                     if not text:
                         continue
+
+                    # Ignore placeholder text from image-to-PDF converters.
+                    normalized = " ".join(text.lower().split()).strip(" .:-")
+                    if normalized in {"image to pdf", "image to pdf converter"}:
+                        continue
                     
                     page_text_length += len(text)
                     bbox = {"x0": round(b[0], 2), "y0": round(b[1], 2), "x1": round(b[2], 2), "y1": round(b[3], 2)}
