@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     ALLOWED_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000"
     
     # Database
-    DATABASE_URL: str = "sqlite:///F:/DocuMind/documind.db"
+    DATABASE_URL: str = "sqlite:///./documind.db"
     USE_PGVECTOR: bool = False
     
     # Supabase (optional)
@@ -66,5 +66,6 @@ class Settings(BaseSettings):
         extra = "ignore"
 
 settings = Settings()
+
 
 
