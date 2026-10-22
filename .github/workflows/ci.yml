@@ -35,9 +35,11 @@ jobs:
         run: |
           pytest backend/tests -v --cov=backend/app --cov-report=term
 
-      - name: Run Grounded Intelligence Benchmark
+      - name: Run Grounded Intelligence Benchmark (Offline CI)
         run: |
           python evaluation/run_evaluation.py
+        env:
+          DOCUMIND_OFFLINE_EVALUATION: "true"
 
   frontend-build:
     name: Frontend Typecheck & Production Build

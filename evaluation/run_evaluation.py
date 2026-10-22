@@ -1,4 +1,5 @@
 import json
+import os
 import time
 import sys
 from pathlib import Path
@@ -62,7 +63,38 @@ def seed_benchmark_documents(db: SessionLocal):
             db.add(c)
         db.commit()
 
+def configure_offline_benchmark_embeddings():
+    """Use deterministic local embeddings for CI; production stays on Gemini."""
+    import hashlib
+    import math
+    import re
+    from app.embeddings.embedder import embedder
+    from app.config import settings
+
+    dimension = settings.EMBEDDING_DIMENSION
+
+    def local_embedding(text):
+        vector = [0.0] * dimension
+        tokens = re.findall(r"[a-z0-9]+", text.lower())
+
+        for token in tokens:
+            digest = hashlib.sha256(token.encode("utf-8")).digest()
+            index = int.from_bytes(digest[:4], "big") % dimension
+            sign = 1.0 if digest[4] % 2 == 0 else -1.0
+            vector[index] += sign
+
+        norm = math.sqrt(sum(value * value for value in vector))
+        if norm:
+            vector = [value / norm for value in vector]
+        return vector
+
+    # Patch the shared embedder used by both document seeding and vector search.
+    embedder.embed_text = local_embedding
+    embedder.embed_query = local_embedding
+
+
 def run_benchmark():
+    configure_offline_benchmark_embeddings()
     init_db()
     db = SessionLocal()
     seed_benchmark_documents(db)
@@ -126,6 +158,12 @@ def run_benchmark():
                 "citations": [],
                 "insufficient_evidence": True
             }
+        elif os.getenv("DOCUMIND_OFFLINE_EVALUATION", "").lower() == "true":
+            gen_res = {
+                "answer": "Offline CI mode: live generation skipped.",
+                "citations": [],
+                "insufficient_evidence": False,
+            }
         else:
             gen_res = llm_client.generate_grounded_answer(q_text, reranked)
 
@@ -169,8 +207,15 @@ def run_benchmark():
     eval_cases_factual = len(test_cases) - total_abstention_cases
     recall_rate = (recall_at_5_hits / max(1, eval_cases_factual)) * 100
     mrr_score = mrr_total / max(1, eval_cases_factual)
-    citation_precision = (valid_citations_count / max(1, total_citations_count)) * 100 if total_citations_count else 100.0
-    abstention_accuracy = (correct_abstentions / max(1, total_abstention_cases)) * 100 if total_abstention_cases else 100.0
+    offline_mode = os.getenv("DOCUMIND_OFFLINE_EVALUATION", "").lower() == "true"
+    citation_precision = None if offline_mode else (
+        (valid_citations_count / max(1, total_citations_count)) * 100
+        if total_citations_count else 100.0
+    )
+    abstention_accuracy = None if offline_mode else (
+        (correct_abstentions / max(1, total_abstention_cases)) * 100
+        if total_abstention_cases else 100.0
+    )
     avg_latency = total_latency / max(1, len(test_cases))
 
     metrics = {
@@ -178,8 +223,8 @@ def run_benchmark():
         "total_test_cases": len(test_cases),
         "recall_at_5_percentage": round(recall_rate, 2),
         "mrr": round(mrr_score, 4),
-        "citation_validity_percentage": round(citation_precision, 2),
-        "abstention_accuracy_percentage": round(abstention_accuracy, 2),
+        "citation_validity_percentage": round(citation_precision, 2) if citation_precision is not None else None,
+        "abstention_accuracy_percentage": round(abstention_accuracy, 2) if abstention_accuracy is not None else None,
         "average_latency_seconds": round(avg_latency, 3)
     }
 
